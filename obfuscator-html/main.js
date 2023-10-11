@@ -8,7 +8,7 @@ const contentView = new (getView())();
 async function renderPage(){
   app.innerHTML = "";
   await contentView.loadData();
-  app.appendChild(contentView.getNode());
+  app.innerHTML = contentView.getNode();
 }
 
 await renderPage();
