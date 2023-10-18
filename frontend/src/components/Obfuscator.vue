@@ -1,5 +1,5 @@
 <script setup>
-
+import {obfuscateHTML, Modes} from '../services/obfuscator'
 </script>
 
 <template>
@@ -16,7 +16,10 @@
             </div>
             <label for="htmlOutput">Rezultat</label>
             <textarea v-model="htmlOutput" type="text" class="form-control" id="htmlOutput" rows="10" disabled></textarea>
-        </div>
+            <div class="text-center">
+                <button @click="preview" class="btn btn-primary">Podejrzyj zaciemniony HTML</button>
+            </div>
+    </div>
 </template>
 
 <script>
@@ -29,7 +32,18 @@ export default {
     },
     methods: {
         obfuscate(){
-            this.htmlOutput = "Rezultat"
+            this.htmlOutput = obfuscateHTML(this.htmlInput, Modes.BASE64);
+        },
+        preview(){
+            const newWindow = window.open('', '_blank');
+            newWindow.document.open();
+            newWindow.document.write(this.htmlOutput);
+            newWindow.document.close();
+            if (newWindow) {
+                newWindow.focus();
+            } else {
+                alert('The new window was blocked by a popup blocker or not allowed.');
+            }
         }
     },
 };
