@@ -19,7 +19,10 @@ function obfuscateWithBase64(htmlString){
 
 function obfuscateWithHexCharacters(htmlString){
     const charArray = Array.from(htmlString).map(char => char.charCodeAt(0));
-    const hexArray = charArray.map(charCode => `&#x${charCode.toString(16)};`);
+    const delimiter = "&#x";
+    const hexArray = charArray.map(charCode => `${delimiter}${charCode.toString(16)}`);
     const obfuscatedHTML = hexArray.join('');
-    return `<script>document.write('${obfuscatedHTML}');</script>`;
+    return `<script>var input='${obfuscatedHTML}'.split("${delimiter}");var output='';
+    for(var i=1; i<input.length;i++){output += String.fromCharCode(parseInt(input[i],16));}
+    document.write(output);</script>`;
 }
