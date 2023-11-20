@@ -31,7 +31,7 @@ export default {
         return {
             htmlInput: '',
             htmlOutput: '',
-            availableModes: [Modes.BASE64, Modes.HEX],
+            availableModes: [Modes.BASE64, Modes.HEX, Modes.CUSTOM],
             selectedMode: Modes.BASE64
         };
     },
