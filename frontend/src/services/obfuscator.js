@@ -33,7 +33,7 @@ function obfuscateWithHexCharacters(htmlString){
 
 function obfuscateWithCustomMethod(htmlString){
     const parser = new DOMParser();
-    const htmlTags = ['div','span','p','h1','h2','h3','h4','h5','h6'];
+    const htmlTags = ['div','span','p','h1','h2','h3','h4','h5','h6', 'newHtmlTag', 'xyz', 'zyx'];
 
     const html = parser.parseFromString(htmlString, 'text/html');
 
@@ -48,7 +48,7 @@ function obfuscateWithCustomMethod(htmlString){
     function convertToNumeric(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             if(node.parentNode.tagName === 'SCRIPT'){
-                node.textContent = node.textContent.replace(/\s|\n/g, '');
+                node.textContent = node.textContent.replace(/\n/g, '');
             } else{
                 node.textContent = textToNumeric(node.textContent);
             }
@@ -90,7 +90,25 @@ function obfuscateWithCustomMethod(htmlString){
             randomNode.appendChild(node);
         }
     }
-    
+
+    function replaceSubmitButtons(rootNode){
+        var submitButtons = rootNode.querySelectorAll('button[type="submit"]');
+
+        submitButtons.forEach(function(originalButton) {
+            var newElement = rootNode.createElement('pseudoButton');
+            newElement.innerHTML = originalButton.innerHTML;
+            for (var i = 0; i < originalButton.attributes.length; i++) {
+                var attr = originalButton.attributes[i];
+                newElement.setAttribute(attr.name, attr.value);
+            }
+            console.log(rootNode.querySelector('form'));
+            newElement.setAttribute("onClick", "document.querySelector('form').submit()")
+            originalButton.parentNode.replaceChild(newElement, originalButton);
+        });
+    }
+
+
+    replaceSubmitButtons(html);
     addHiddenNodes(html, 1000);
     convertToNumeric(html);
 
