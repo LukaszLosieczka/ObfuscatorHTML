@@ -1,9 +1,9 @@
 <script setup>
-import Obfuscator from '../components/Obfuscator.vue'
+import ObfuscatorComponent from '../components/ObfuscatorComponent.vue'
 </script>
 
 <template>
   <main>
-    <Obfuscator/>
+    <ObfuscatorComponent/>
   </main>
 </template>

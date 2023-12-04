@@ -4,7 +4,7 @@ export const Modes = {
     CUSTOM: "custom"
 }
 
-export function obfuscateHTML(htmlString, mode){
+export function obfuscateHTML(htmlString, mode, options){
     if(mode === Modes.BASE64){
         return obfuscateWithBase64(htmlString);
     }
@@ -12,7 +12,7 @@ export function obfuscateHTML(htmlString, mode){
         return obfuscateWithHexCharacters(htmlString);
     }
     else if(mode === Modes.CUSTOM){
-        return obfuscateWithCustomMethod(htmlString); 
+        return obfuscateWithCustomMethod(htmlString, options); 
     }
 }
 
@@ -31,42 +31,17 @@ function obfuscateWithHexCharacters(htmlString){
     document.write(output);</script>`;
 }
 
-function obfuscateWithCustomMethod(htmlString){
-    const parser = new DOMParser();
+
+
+function obfuscateWithCustomMethod(htmlString, options){
+    const parserDOM = new DOMParser();
     const htmlTags = ['div','span','p','h1','h2','h3','h4','h5','h6', 'newHtmlTag', 'xyz', 'zyx'];
 
-    const html = parser.parseFromString(htmlString, 'text/html');
-
-    function textToNumeric(text){
-        let numericText = '';
-        for (let i = 0; i < text.length; i++) {
-          numericText += '&#' + text.charCodeAt(i) + ';';
-        }
-        return numericText;
-    }
-
-    function convertToNumeric(node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            if(node.parentNode.tagName === 'SCRIPT'){
-                node.textContent = node.textContent.replace(/\n/g, '');
-            } else{
-                node.textContent = textToNumeric(node.textContent);
-            }
-        } else if (node.nodeType === Node.ELEMENT_NODE){
-            for (let i = 0; i < node.attributes.length; i++) {
-                const attr = node.attributes[i];
-                node.setAttribute(attr.name, textToNumeric(attr.value));
-            }
-        }
-
-        if (node.childNodes && node.childNodes.length > 0) {
-          node.childNodes.forEach(childNode => convertToNumeric(childNode));
-        }
-    }
+    const html = parserDOM.parseFromString(htmlString, 'text/html');
 
     function randomString(length) {
         let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
         const charactersLength = characters.length;
         let counter = 0;
         while (counter < length) {
@@ -91,26 +66,107 @@ function obfuscateWithCustomMethod(htmlString){
         }
     }
 
-    function replaceSubmitButtons(rootNode){
-        var submitButtons = rootNode.querySelectorAll('button[type="submit"]');
-
-        submitButtons.forEach(function(originalButton) {
-            var newElement = rootNode.createElement('pseudoButton');
-            newElement.innerHTML = originalButton.innerHTML;
-            for (var i = 0; i < originalButton.attributes.length; i++) {
-                var attr = originalButton.attributes[i];
-                newElement.setAttribute(attr.name, attr.value);
-            }
-            console.log(rootNode.querySelector('form'));
-            newElement.setAttribute("onClick", "document.querySelector('form').submit()")
-            originalButton.parentNode.replaceChild(newElement, originalButton);
-        });
+    function textToNumeric(text){
+        let numericText = '';
+        for (let i = 0; i < text.length; i++) {
+          numericText += '&#' + text.charCodeAt(i) + ';';
+        }
+        return numericText;
     }
 
+    const indetifierMap = {};
 
-    replaceSubmitButtons(html);
-    addHiddenNodes(html, 1000);
-    convertToNumeric(html);
+
+    function obfuscateJS(code){
+        const stringTable = [];
+        // eslint-disable-next-line no-undef
+        let transformedCode = Babel.transform(code, {
+            plugins: [
+              function customPlugin() {
+                return {
+                  visitor: {
+                    Identifier(path) {
+                      if (path.node.name !== 'undefined' && options.changeJSIndenfires) {
+                        if (indetifierMap[path.node.name]) {
+                            path.node.name = indetifierMap[path.node.name];
+                        }
+                      }
+                    },
+                    FunctionDeclaration(path) {
+                      if (path.node.id && path.node.id.name && options.changeJSIndenfires) {
+                        if (!indetifierMap[path.node.id.name]) {
+                            const newName = randomString(50);
+                            indetifierMap[path.node.id.name] = newName;
+                            path.node.id.name = newName;
+                          } else {
+                            path.node.id.name = indetifierMap[path.node.id.name];
+                          }
+                      }
+                    },
+                    VariableDeclarator(path) {
+                        if (path.node.id && path.node.id.name && options.changeJSIndenfires) {
+                          if (!indetifierMap[path.node.id.name]) {
+                            const newName = randomString(50);
+                            indetifierMap[path.node.id.name] = newName;
+                            path.node.id.name = newName;
+                          } else {
+                            path.node.id.name = indetifierMap[path.node.id.name];
+                          }
+                        }
+                    },
+                    StringLiteral(path) {
+                        if(options.stringMapping){
+                            const stringValue = path.node.value;
+                            let index = stringTable.indexOf(stringValue);
+                            if (index === -1) {
+                            stringTable.push(stringValue);
+                            index = stringTable.length-1;
+                            }
+                            path.replaceWith({type: 'Identifier' , name: `stringTable[${index}]`});
+                        }
+                    },
+                  },
+                };
+              },
+            ],
+          }).code;
+          if(options.stringMapping){
+            let values = "";
+            stringTable.forEach(item => values += `"${item}",`);
+            transformedCode = `const stringTable=[${values}];` + transformedCode;
+          }
+          return transformedCode;
+    }
+
+    function traverseHtml(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if(node.parentNode.tagName === 'SCRIPT'){
+                const obfuscatedCode = obfuscateJS(node.textContent);
+                node.textContent = obfuscatedCode.replace(/\n/g, '');
+            } else{
+                node.textContent = textToNumeric(node.textContent);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE && options.encodeAttributeValues){
+            for (let i = 0; i < node.attributes.length; i++) {
+                const attr = node.attributes[i];
+                node.setAttribute(attr.name, textToNumeric(attr.value));
+            }
+        }
+
+        if (node.childNodes && node.childNodes.length > 0) {
+          node.childNodes.forEach(childNode => traverseHtml(childNode));
+        }
+    }
+
+    function addPreventingDebugger(rootNode){
+        const script = document.createElement('script');
+        script.textContent = 'document.onkeydown = function(e) {if(event.keyCode == 123) {return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "I".charCodeAt(0)){return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "J".charCodeAt(0)){return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "C".charCodeAt(0)){return false;}if(e.ctrlKey && e.keyCode == "U".charCodeAt(0)){return false;} }; document.addEventListener("contextmenu", function(event){event.preventDefault();});';
+        rootNode.head.appendChild(script);
+    }
+
+    if(options.addHiddenNodes) addHiddenNodes(html, 400);
+    if(options.preventDebugger) addPreventingDebugger(html);
+    traverseHtml(html);
 
     const serializer = new XMLSerializer();
 

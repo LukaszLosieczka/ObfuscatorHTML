@@ -103,6 +103,10 @@
       <script>
         var form = document.getElementById("inputForm");
 
+        function roundValue(value){
+            return Math.round(value*100)/100;
+        }
+
         function submitForm(event) {
             event.preventDefault();
 
@@ -111,7 +115,7 @@
             var height = document.getElementById("height").value;
             var depth = document.getElementById("depth").value;
 
-            var tableBody = document.getElementById("packages").getElementsByTagName('tbody')[0];;
+            var tableBody = document.getElementById("packages").getElementsByTagName('tbody')[0];
             var row = tableBody.insertRow(-1);
             
             var cell1 = row.insertCell(0);
@@ -124,7 +128,7 @@
             cell2.innerHTML = width;
             cell3.innerHTML = height; 
             cell4.innerHTML = depth; 
-            cell5.innerHTML = round((width * height * depth)/1000000).toString();
+            cell5.innerHTML = roundValue((width * height * depth)/1000000);
 
             var totalVolume = document.getElementById("totalVolume");
             totalVolume.innerHTML = parseFloat(totalVolume.innerHTML) + parseFloat(cell5.innerHTML);
@@ -133,10 +137,6 @@
         }
 
         form.addEventListener('submit', submitForm);
-
-        function round(value){
-            return Math.round(value*100)/100;
-        }
         </script>
 </body>
 </html>
