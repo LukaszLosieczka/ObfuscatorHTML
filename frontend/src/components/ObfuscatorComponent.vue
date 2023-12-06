@@ -1,10 +1,11 @@
 <script setup>
 import {obfuscateHTML, Modes} from '../services/obfuscator'
+import {openNewTab, copyToClipboard, downloadHtml} from '../services/htmlService'
 </script>
 
 <template>
     <div class="container">
-            <h1 class="text-center mt-5">Obfuskator i detektor obfuskacji kodu źródłowego programów w HTML</h1>
+            <h1 class="text-center">Obfuskator i detektor obfuskacji kodu źródłowego programów w HTML</h1>
             <form class="mt-5">
                 <div class="form-group mb-3">
                     <label for="htmlInput">Kod HTML</label>
@@ -26,23 +27,30 @@ import {obfuscateHTML, Modes} from '../services/obfuscator'
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="checkbox3" v-model="options.addHiddenNodes">
-                        <label class="form-check-label" for="checkbox2">Add hidden nodes</label>
+                        <label class="form-check-label" for="checkbox3">Add hidden nodes</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="checkbox4" v-model="options.changeJSIndenfires">
-                        <label class="form-check-label" for="checkbox2">Change Javascript indentifires</label>
+                        <label class="form-check-label" for="checkbox4">Change Javascript indentifires</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="checkbox5" v-model="options.stringMapping">
-                        <label class="form-check-label" for="checkbox2">String array mapping</label>
+                        <label class="form-check-label" for="checkbox5">String array mapping</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="checkbox6" v-model="options.numberMapping">
+                        <label class="form-check-label" for="checkbox6">Number array mapping</label>
                     </div>
                 </div>
                  <button @click="obfuscate" class="btn btn-primary" :disabled="htmlInput ===''">Zaciemnij HTML</button>
             </div>
             <label for="htmlOutput">Rezultat</label>
             <textarea v-model="htmlOutput" type="text" class="form-control" id="htmlOutput" rows="10" disabled></textarea>
-            <div class="text-center">
+            <div class="d-flex flex-row justify-content-center align-items-center gap-3">
                 <button @click="preview" class="btn btn-primary" :disabled="htmlOutput ===''">Podejrzyj zaciemniony HTML</button>
+                <button @click="copy" class="btn btn-secondary" :disabled="htmlOutput ===''">Kopiuj Rezultat</button>
+                <button @click="download" class="btn btn-primary" :disabled="htmlOutput ===''">Pobierz Rezultat</button>
+                <button @click="clean" class="btn btn-secondary" :disabled="htmlOutput ===''">Wyczyść Rezultat</button>
             </div>
     </div>
 </template>
@@ -55,7 +63,7 @@ export default {
             htmlOutput: '',
             availableModes: [Modes.BASE64, Modes.HEX, Modes.CUSTOM],
             selectedMode: Modes.CUSTOM,
-            options: {preventDebugger: false, encodeAttributeValues: false, addHiddenNodes: false ,changeJSIndenfires: false, stringMapping: false}
+            options: {preventDebugger: false, encodeAttributeValues: false, addHiddenNodes: false ,changeJSIndenfires: false, stringMapping: false, numberMapping: false}
         };
     },
     methods: {
@@ -63,15 +71,16 @@ export default {
             this.htmlOutput = obfuscateHTML(this.htmlInput, this.selectedMode, this.options);
         },
         preview(){
-            const newWindow = window.open('', '_blank');
-            newWindow.document.open();
-            newWindow.document.write(this.htmlOutput);
-            newWindow.document.close();
-            if (newWindow) {
-                newWindow.focus();
-            } else {
-                alert('The new window was blocked by a popup blocker or not allowed.');
-            }
+            openNewTab(this.htmlOutput);
+        },
+        copy(){
+            copyToClipboard(this.htmlOutput);
+        },
+        download(){
+            downloadHtml(this.htmlOutput);
+        },
+        clean(){
+            this.htmlOutput = '';
         }
     },
 };

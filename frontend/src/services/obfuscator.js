@@ -1,3 +1,5 @@
+import {textToNumeric, randomString} from "./utils.js"
+
 export const Modes = {
     BASE64: "base64",
     HEX: "hexadecimal",
@@ -15,6 +17,7 @@ export function obfuscateHTML(htmlString, mode, options){
         return obfuscateWithCustomMethod(htmlString, options); 
     }
 }
+
 
 function obfuscateWithBase64(htmlString){
     const encodedHTML = window.btoa(htmlString);
@@ -39,18 +42,6 @@ function obfuscateWithCustomMethod(htmlString, options){
 
     const html = parserDOM.parseFromString(htmlString, 'text/html');
 
-    function randomString(length) {
-        let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-        const charactersLength = characters.length;
-        let counter = 0;
-        while (counter < length) {
-          result += characters.charAt(Math.floor(Math.random() * charactersLength));
-          counter += 1;
-        }
-        return result;
-    }
-
     function addHiddenNodes(rootNode, n){
         const nodes = Array.from(rootNode.querySelectorAll('*'))
             .filter(node => {return node.nodeName !== 'TITLE' && node.nodeName !== 'SCRIPT'});
@@ -66,19 +57,12 @@ function obfuscateWithCustomMethod(htmlString, options){
         }
     }
 
-    function textToNumeric(text){
-        let numericText = '';
-        for (let i = 0; i < text.length; i++) {
-          numericText += '&#' + text.charCodeAt(i) + ';';
-        }
-        return numericText;
-    }
-
-    const indetifierMap = {};
-
-
     function obfuscateJS(code){
+        const indetifierMap = {};
+        const stringTableName = randomString(50);
         const stringTable = [];
+        const numberTableName = randomString(50);
+        const numberTable = [];
         // eslint-disable-next-line no-undef
         let transformedCode = Babel.transform(code, {
             plugins: [
@@ -87,7 +71,7 @@ function obfuscateWithCustomMethod(htmlString, options){
                   visitor: {
                     Identifier(path) {
                       if (path.node.name !== 'undefined' && options.changeJSIndenfires) {
-                        if (indetifierMap[path.node.name]) {
+                        if (indetifierMap[path.node.name] && path.parentPath.node.property !== path.node) {
                             path.node.name = indetifierMap[path.node.name];
                         }
                       }
@@ -97,10 +81,15 @@ function obfuscateWithCustomMethod(htmlString, options){
                         if (!indetifierMap[path.node.id.name]) {
                             const newName = randomString(50);
                             indetifierMap[path.node.id.name] = newName;
-                            path.node.id.name = newName;
-                          } else {
-                            path.node.id.name = indetifierMap[path.node.id.name];
-                          }
+                            for(const param of path.node.params){
+                              if(!indetifierMap[param.name]){
+                                const newName = randomString(50);
+                                indetifierMap[param.name] = newName;
+                              }
+                              param.name = indetifierMap[param.name];
+                            }
+                        }
+                        path.node.id.name = indetifierMap[path.node.id.name];
                       }
                     },
                     VariableDeclarator(path) {
@@ -108,10 +97,8 @@ function obfuscateWithCustomMethod(htmlString, options){
                           if (!indetifierMap[path.node.id.name]) {
                             const newName = randomString(50);
                             indetifierMap[path.node.id.name] = newName;
-                            path.node.id.name = newName;
-                          } else {
-                            path.node.id.name = indetifierMap[path.node.id.name];
                           }
+                          path.node.id.name = indetifierMap[path.node.id.name];
                         }
                     },
                     StringLiteral(path) {
@@ -122,9 +109,20 @@ function obfuscateWithCustomMethod(htmlString, options){
                             stringTable.push(stringValue);
                             index = stringTable.length-1;
                             }
-                            path.replaceWith({type: 'Identifier' , name: `stringTable[${index}]`});
+                            path.replaceWith({type: 'Identifier' , name: `${stringTableName}[${index}]`});
                         }
                     },
+                    NumericLiteral(path){
+                        if(options.numberMapping){
+                          const numberValue = path.node.value;
+                          let index = numberTable.indexOf(numberValue);
+                          if(index === -1){
+                            numberTable.push(numberValue);
+                            index = numberTable.length - 1;
+                          }
+                          path.replaceWith({type: 'Identifier', name: `${numberTableName}[${index}]`});
+                        }
+                    }
                   },
                 };
               },
@@ -133,8 +131,14 @@ function obfuscateWithCustomMethod(htmlString, options){
           if(options.stringMapping){
             let values = "";
             stringTable.forEach(item => values += `"${item}",`);
-            transformedCode = `const stringTable=[${values}];` + transformedCode;
+            transformedCode = `const ${stringTableName}=[${values}];` + transformedCode;
           }
+          if(options.numberMapping){
+            let values = "";
+            numberTable.forEach(item => values += `${item},`);
+            transformedCode = `const ${numberTableName}=[${values}];` + transformedCode;
+          }
+          
           return transformedCode;
     }
 
@@ -160,7 +164,7 @@ function obfuscateWithCustomMethod(htmlString, options){
 
     function addPreventingDebugger(rootNode){
         const script = document.createElement('script');
-        script.textContent = 'document.onkeydown = function(e) {if(event.keyCode == 123) {return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "I".charCodeAt(0)){return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "J".charCodeAt(0)){return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "C".charCodeAt(0)){return false;}if(e.ctrlKey && e.keyCode == "U".charCodeAt(0)){return false;} }; document.addEventListener("contextmenu", function(event){event.preventDefault();});';
+        script.textContent = 'document.onkeydown = function(event) {if(e.keyCode == 123) {return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "I".charCodeAt(0)){return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "J".charCodeAt(0)){return false;}if(e.ctrlKey && e.shiftKey && e.keyCode == "C".charCodeAt(0)){return false;}if(e.ctrlKey && e.keyCode == "U".charCodeAt(0)){return false;} }; document.addEventListener("contextmenu", function(event){event.preventDefault();});';
         rootNode.head.appendChild(script);
     }
 
