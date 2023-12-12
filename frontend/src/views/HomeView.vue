@@ -8,7 +8,7 @@
     <div class="container custom-container mt-3">
       <h1 class="text-center">Obfuskator i detektor obfuskacji kodu źródłowego programów w HTML</h1>
       <NavigationBarComponent class="justify-content-center mt-3" />
-      <RouterView />
+      <RouterView/>
     </div>
   </main>
 </template>

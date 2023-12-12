@@ -4,7 +4,7 @@ import {openNewTab, copyToClipboard, downloadHtml} from '../services/htmlService
 </script>
 
 <template>
-    <form class="mt-5">
+    <form>
         <div class="form-group mb-3">
             <label for="htmlInput">Kod HTML</label>
             <textarea v-model="htmlInput" type="text" class="form-control" id="htmlInput" rows="10" placeholder="Skopiuj swój kod HTML"></textarea>

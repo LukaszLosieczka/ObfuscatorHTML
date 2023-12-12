@@ -22,7 +22,8 @@ export default {
 </script>
 
 <style>
-.custom-btn {
-    background-color:darkgray;
+.custom-btn:disabled {
+    background-color: darkgray;
+    font-weight: bold;
 }
 </style>
