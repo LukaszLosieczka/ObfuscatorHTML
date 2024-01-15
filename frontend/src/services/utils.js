@@ -17,3 +17,15 @@ export function textToNumeric(text){
     }
     return numericText;
 }
+
+export function numericToText(numeric){
+  let text = '';
+  const charCodes = numeric.match(/&#[0-9]+;/);
+  if(charCodes){
+    for(let i = 1; i < charCodes.length; i++){
+      text += String.fromCodePoint(charCodes[i]);
+    }
+    return text;
+  }
+  return numeric;
+}
