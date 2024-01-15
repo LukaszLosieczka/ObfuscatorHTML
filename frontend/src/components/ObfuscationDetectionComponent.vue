@@ -1,4 +1,6 @@
 <script setup>
+import {deobfuscateHTML} from '../services/deobfuscator'
+import {openNewTab, copyToClipboard, downloadHtml} from '../services/htmlService'
 </script>
 
 <template>
@@ -12,7 +14,13 @@
         <button @click="detectObfuscation" class="btn btn-primary" :disabled="htmlInput ===''">Sprawdź</button>
         <button @click="reset" class="btn btn-secondary" :disabled="htmlInput ===''">Resetuj</button>
     </div>
-    <h3 class="mt-5">Rezultat: {{this.result}}</h3>
+    <label for="htmlOutput">Rezultat deobfuskacji</label>
+    <textarea v-model="htmlOutput" type="text" class="form-control" id="htmlOutput" rows="10" disabled></textarea>
+    <div class="d-flex flex-row justify-content-center align-items-center gap-3">
+        <button @click="preview" class="btn btn-primary" :disabled="htmlOutput ===''">Podejrzyj zdeobfuskowany HTML</button>
+        <button @click="copy" class="btn btn-secondary" :disabled="htmlOutput ===''">Kopiuj Rezultat</button>
+        <button @click="download" class="btn btn-primary" :disabled="htmlOutput ===''">Pobierz Rezultat</button>
+    </div>
 </template>
 
 <script type="text/babel">
@@ -20,16 +28,26 @@ export default {
     data(){
         return {
             htmlInput: '',
+            htmlOutput: '',
             result: '',
         };
     },
     methods: {
         detectObfuscation(){
-            this.result = 'Wykryto obfuskację!';
+            this.htmlOutput = deobfuscateHTML(this.htmlInput);
         },
         reset(){
             this.htmlInput = '';
-            this.result = '';
+            this.htmlOutput = '';
+        },
+        copy(){
+            copyToClipboard(this.htmlOutput);
+        },
+        preview(){
+            openNewTab(this.htmlOutput);
+        },
+        download(){
+            downloadHtml(this.htmlOutput);
         }
     },
 };
